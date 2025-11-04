@@ -1,73 +1,80 @@
-<div align="center">
-  <img src="images/icon.png" width="160" alt="Terminal OSC Notifier icon" />
-  <h1 style="margin-bottom: 0;">Terminal OSC Notifier</h1>
-  <p style="font-size: 1.15rem; margin-top: 0.25rem;">
-    Ghostty-style OSC notifications for your VS Code terminals — native alerts with focus-on-click.
-  </p>
-  <p>
-    <a href="https://github.com/wbopan/vscode-terminal-osc-notifier">GitHub</a>
-    &nbsp;•&nbsp;
-    <a href="https://github.com/wbopan/vscode-terminal-osc-notifier/issues">Issues</a>
-  </p>
-</div>
+# Terminal Notification for VS Code
 
-# Terminal OSC Notifier
+Turn terminal messages into native system notifications you can click to jump back to the right terminal.
 
-VS Code extension that listens to terminal output for Ghostty-style OSC notification sequences (`OSC 9`, `OSC 777;notify;…`) and turns them into native OS notifications plus optional VS Code toasts. Clicking a notification re-focuses the originating integrated terminal tab.
+- Stay in the editor and never miss long-running tasks. 🔔
+- Click once to focus the exact integrated terminal that sent the alert. 🖱️
+- Works the same with local and remote terminals over SSH. 🌐
 
-## Features
+## What you get
 
-- Detects both `OSC 9;<message>` and `OSC 777;notify;<title>;<message>` sequences, including payloads wrapped by tmux passthrough escape codes.
-- Raises native notifications via `node-notifier` on macOS (Notification Center), Windows (SnoreToast), and Linux (`notify-send`), while preserving VS Code focus and iconography when possible.
-- Provides fallback VS Code notifications with a **Focus Terminal** action so you can jump back even when the OS API lacks click events (e.g. some Linux environments).
-- Optionally filters Ghostty progress updates (`OSC 9;4;…`) to avoid noisy notifications.
-- Deep-link handler keeps the extension functional even when the OS notification system cannot route click events back to VS Code.
+- Support for two common notification escape sequences: `OSC 9;<message>` and `OSC 777;notify;<title>;<message>`.
+- Native notifications on macOS, Windows, and Linux, with a VS Code fallback when the OS cannot send clicks back.
+- tmux passthrough handled automatically, so sequences forwarded by tmux still work.
 
-## Requirements
+> Tip: Many build tools, test runners, and cloud development tools can emit these sequences to announce status.
 
-- Visual Studio Code `1.93.0` or newer (first release exposing the Shell Integration execution stream used by this extension).
-- Terminal must have Shell Integration enabled (the default for built-in terminals in supported shells). Custom shells must source VS Code's shell integration script.
+## Quick start
 
-## Usage
+1. Install **Terminal Notification for VS Code** from the VS Code Marketplace or sideload the `.vsix`.
+2. Run a command that emits a supported sequence from your terminal.
+3. Click the notification to focus the emitting terminal tab in VS Code.
 
-1. Install **Terminal OSC Notifier** from the VS Code Marketplace (or sideload the `.vsix` created with `vsce package`).
-2. Trigger notifications from a shell command by emitting one of the supported escape sequences:
+### Examples you can try
 
-   ```sh
-   # Simple body-only notification (OSC 9)
-   printf '\e]9;Build finished ✔\a'
+```sh
+# Simple body-only notification (OSC 9)
+printf '\e]9;Build finished\e\\'        # ST terminator
+# or
+printf '\e]9;Build finished\a'          # BEL terminator
 
-   # Title + body notification (OSC 777)
-   printf '\e]777;notify;Nightly Tests;All suites passed\a'
+# Title + body (OSC 777)
+printf '\e]777;notify;Nightly Tests;All suites passed\a'
 
-   # With tmux passthrough (tmux forwards OSC sequences via DCS tmux;)
-   printf '\ePtmux;\e\e]777;notify;Deploy;Production complete\a\e\\'
-   ```
+# Through tmux passthrough
+printf '\ePtmux;\e\e]777;notify;Deploy;Production complete\a\e\\'
+```
 
-3. Click the OS notification (where supported) or the VS Code toast action to focus the emitting terminal.
+## What are “OSC sequences”?
 
-## Extension Settings
+OSC stands for Operating System Command. It is a family of escape sequences that terminals interpret as requests, such as setting a window title or asking for a desktop notification. This extension listens to the shell execution stream exposed by VS Code and turns the two sequences above into notifications.
 
-These options live under the `Terminal OSC Notifier` group in Settings (`oscNotifier.*`):
+## Remote and tmux
 
-- `preferOsNotifications` (default `true`): Send native OS notifications. Disable to keep alerts inside VS Code only.
-- `showVsCodeNotification` (default `true`): Show VS Code pop-ups alongside OS notifications. Handy if the OS API cannot deliver click callbacks.
-- `ignoreProgressOsc9_4` (default `true`): Ignore `OSC 9;4` sequences, often used for progress updates in Ghostty, to reduce noise.
+- Remote: Works with VS Code Remote over SSH because parsing happens on the client side in the editor.
+- tmux: The extension unwraps tmux passthrough so that sequences forwarded by tmux continue to be recognized.
+
+## Settings
+
+All settings live under **Terminal Notification** (`oscNotifier.*`).
+
+- `oscNotifier.preferOsNotifications` default true. Use native OS notifications. Disable to use VS Code toasts only.
+- `oscNotifier.showVsCodeNotification` default true. Show a VS Code toast alongside OS notifications.
+- `oscNotifier.ignoreProgressOsc9_4` default true. Ignore `OSC 9;4` progress updates to reduce noise.
 
 Commands:
 
-- `OSC Notifier: Enable` — Resume parsing terminal output (default state).
-- `OSC Notifier: Disable` — Pause parsing without unloading the extension.
+- **Notification: Enable** — resume parsing terminal output.
+- **Notification: Disable** — pause parsing without unloading the extension.
+
+## Compatibility
+
+- VS Code 1.93 or newer.
+- Shell Integration must be enabled in your integrated terminal. This is the default for supported shells.
+
+### Notes and limitations
+
+- Some Linux environments cannot route notification click events back to the app. The extension opens a deep link to return focus to the right terminal as a fallback.
+- Icons shown in OS notifications follow the host platform’s rules.
 
 ## Development
 
 ```sh
 npm install
-npm run watch   # or npm run compile for a one-off build
+npm run watch   # or: npm run compile
+# press F5 in VS Code to launch an Extension Development Host
 ```
-
-Press `F5` in VS Code to launch an Extension Development Host with live-reload.
 
 ## License
 
-Released under the [MIT License](LICENSE) by Pan Wenbo.
+MIT © Pan Wenbo
