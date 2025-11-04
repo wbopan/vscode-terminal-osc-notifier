@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+*.vsix
+
+# Logs and diagnostics
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Coverage
+coverage/
+*.lcov
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Environment files
+.env
+.env.*
+
+# IDE artifacts
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Misc
+*.code-workspace
+tmp/
+
