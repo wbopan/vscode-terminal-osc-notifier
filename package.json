@@ -1,9 +1,15 @@
 {
     "name": "vscode-terminal-osc-notifier",
-    "displayName": "Terminal OSC Notifier",
+    "displayName": "Terminal Notification",
     "description": "Parse Ghostty-style OSC notifications (OSC 9 / OSC 777;notify;title;body) from integrated terminals and send OS/VS Code notifications. Click to focus the originating terminal tab.",
-    "publisher": "Pan Wenbo",
+    "icon": "images/icon.png",
+    "publisher": "wenbopan",
     "version": "0.0.1",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/wbopan/vscode-terminal-osc-notifier.git"
+    },
     "engines": {
         "vscode": "^1.93.0"
     },
@@ -20,7 +26,7 @@
     ],
     "contributes": {
         "configuration": {
-            "title": "Terminal OSC Notifier",
+            "title": "Terminal Notification",
             "properties": {
                 "oscNotifier.preferOsNotifications": {
                     "type": "boolean",
@@ -42,11 +48,11 @@
         "commands": [
             {
                 "command": "oscNotifier.enable",
-                "title": "OSC Notifier: Enable"
+                "title": "Notification: Enable"
             },
             {
                 "command": "oscNotifier.disable",
-                "title": "OSC Notifier: Disable"
+                "title": "Notification: Disable"
             }
         ]
     },
