@@ -8,7 +8,7 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--enable-proposed-api",
-                "wenbo.vscode-terminal-osc-notifier"
+                "wenbopan.vscode-terminal-osc-notifier"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
