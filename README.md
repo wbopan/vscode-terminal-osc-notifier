@@ -8,6 +8,8 @@ Turn terminal messages into native system notifications you can click to jump ba
 - Click once to focus the exact integrated terminal that sent the alert. 🖱️
 - Works the same with local and remote terminals over SSH. 🌐
 
+![Screenshot of notification and highlighted terminal](images/screenshot.png)
+
 ## What you get
 
 - Support for two common notification escape sequences: `OSC 9;<message>` and `OSC 777;notify;<title>;<message>`.
