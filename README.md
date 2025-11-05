@@ -46,11 +46,11 @@ OSC stands for Operating System Command. It is a family of escape sequences that
 
 ## Settings
 
-All settings live under **Terminal Notification** (`oscNotifier.*`).
+All settings live under **Terminal Notification** (`terminalNotification.*`).
 
-- `oscNotifier.preferOsNotifications` default true. Use native OS notifications. Disable to use VS Code toasts only.
-- `oscNotifier.showVsCodeNotification` default true. Show a VS Code toast alongside OS notifications.
-- `oscNotifier.ignoreProgressOsc9_4` default true. Ignore `OSC 9;4` progress updates to reduce noise.
+- `terminalNotification.preferOsNotifications` default true. Use native OS notifications. Disable to use VS Code toasts only.
+- `terminalNotification.showVsCodeNotification` default true. Show a VS Code toast alongside OS notifications.
+- `terminalNotification.ignoreProgressOsc9_4` default true. Ignore `OSC 9;4` progress updates to reduce noise.
 
 Commands:
 

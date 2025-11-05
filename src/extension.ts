@@ -22,7 +22,13 @@ let notifier: Notifier;               // Platform-specific notifier instance
 let iconPathForOS: string | undefined; // VS Code icon path (absolute)
 let extensionCtx: vscode.ExtensionContext;
 
+const SETTINGS_SECTION = 'terminalNotification';
+
 const parsers = new Map<vscode.Terminal, OscParser>();
+
+function getSetting<T>(key: string, defaultValue: T): T {
+    return vscode.workspace.getConfiguration(SETTINGS_SECTION).get<T>(key, defaultValue);
+}
 
 type TerminalWriteEvent = { terminal: vscode.Terminal; data: string };
 
@@ -37,7 +43,7 @@ function getParser(t: vscode.Terminal): OscParser {
                 sendOsNotification(tid, title, body);
                 sendVsCodeNotification(tid, title, body);
             },
-            vscode.workspace.getConfiguration('oscNotifier').get<boolean>('ignoreProgressOsc9_4', true)
+            getSetting('ignoreProgressOsc9_4', true)
         );
         parsers.set(t, p);
     }
@@ -196,8 +202,8 @@ function installGlobalNotifierClickHandler() {
     if (!notifier?.on) return;
     // Avoid duplicate registration
     const anyNotifier = notifier as any;
-    if (anyNotifier.__oscNotifierClickHooked) return;
-    anyNotifier.__oscNotifierClickHooked = true;
+    if (anyNotifier.__terminalNotificationClickHooked) return;
+    anyNotifier.__terminalNotificationClickHooked = true;
 
     notifier.on!('click', (_obj: any, options: any) => {
         const tid = options?.tid as string | undefined;
@@ -252,7 +258,7 @@ function createPlatformNotifier(): Notifier {
 }
 
 function sendOsNotification(tid: string, title: string, message: string) {
-    const preferOs = vscode.workspace.getConfiguration('oscNotifier').get<boolean>('preferOsNotifications', true);
+    const preferOs = getSetting('preferOsNotifications', true);
     if (!preferOs) return;
 
     try {
@@ -292,7 +298,7 @@ function sendOsNotification(tid: string, title: string, message: string) {
 }
 
 function sendVsCodeNotification(tid: string, title: string, message: string) {
-    const show = vscode.workspace.getConfiguration('oscNotifier').get<boolean>('showVsCodeNotification', true);
+    const show = getSetting('showVsCodeNotification', true);
     if (!show) return;
 
     const text = title ? `${title}: ${message}` : message;
@@ -312,8 +318,8 @@ export function activate(ctx: vscode.ExtensionContext) {
 
     // Commands: enable/disable parsing
     ctx.subscriptions.push(
-        vscode.commands.registerCommand('oscNotifier.enable', () => { enabled = true; vscode.window.showInformationMessage('OSC Notifier enabled'); }),
-        vscode.commands.registerCommand('oscNotifier.disable', () => { enabled = false; vscode.window.showInformationMessage('OSC Notifier disabled'); }),
+        vscode.commands.registerCommand('terminalNotification.enable', () => { enabled = true; vscode.window.showInformationMessage('Terminal notifications enabled'); }),
+        vscode.commands.registerCommand('terminalNotification.disable', () => { enabled = false; vscode.window.showInformationMessage('Terminal notifications disabled'); }),
     );
 
     // URI handler: fallback for Linux or other runtimes without click events

@@ -4,7 +4,7 @@
     "description": "Parse Ghostty-style OSC notifications (OSC 9 / OSC 777;notify;title;body) from integrated terminals and send OS/VS Code notifications. Click to focus the originating terminal tab.",
     "icon": "images/icon.png",
     "publisher": "wenbopan",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -25,8 +25,8 @@
     ],
     "activationEvents": [
         "onStartupFinished",
-        "onCommand:oscNotifier.enable",
-        "onCommand:oscNotifier.disable",
+        "onCommand:terminalNotification.enable",
+        "onCommand:terminalNotification.disable",
         "onUri"
     ],
     "keywords": [
@@ -42,17 +42,17 @@
         "configuration": {
             "title": "Terminal Notification",
             "properties": {
-                "oscNotifier.preferOsNotifications": {
+                "terminalNotification.preferOsNotifications": {
                     "type": "boolean",
                     "default": true,
                     "description": "Send native OS notifications via node-notifier. If false, only VS Code notifications are shown."
                 },
-                "oscNotifier.showVsCodeNotification": {
+                "terminalNotification.showVsCodeNotification": {
                     "type": "boolean",
                     "default": true,
                     "description": "Also show a VS Code notification with a 'Focus Terminal' action."
                 },
-                "oscNotifier.ignoreProgressOsc9_4": {
+                "terminalNotification.ignoreProgressOsc9_4": {
                     "type": "boolean",
                     "default": true,
                     "description": "Ignore OSC 9;4 (progress reports) to avoid conflicts with Ghostty's behavior."
@@ -61,11 +61,11 @@
         },
         "commands": [
             {
-                "command": "oscNotifier.enable",
+                "command": "terminalNotification.enable",
                 "title": "Notification: Enable"
             },
             {
-                "command": "oscNotifier.disable",
+                "command": "terminalNotification.disable",
                 "title": "Notification: Disable"
             }
         ]
