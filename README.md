@@ -1,3 +1,5 @@
+![Terminal Notification banner](images/banner.png)
+
 # Terminal Notification for VS Code
 
 Turn terminal messages into native system notifications you can click to jump back to the right terminal.

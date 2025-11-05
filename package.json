@@ -4,7 +4,7 @@
     "description": "Parse Ghostty-style OSC notifications (OSC 9 / OSC 777;notify;title;body) from integrated terminals and send OS/VS Code notifications. Click to focus the originating terminal tab.",
     "icon": "images/icon.png",
     "publisher": "wenbopan",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -20,13 +20,8 @@
     "extensionKind": [
         "ui"
     ],
-    "enabledApiProposals": [
-        "terminalDataWriteEvent"
-    ],
     "activationEvents": [
         "onStartupFinished",
-        "onCommand:terminalNotification.enable",
-        "onCommand:terminalNotification.disable",
         "onUri"
     ],
     "keywords": [
