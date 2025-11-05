@@ -36,5 +36,5 @@ coverage/
 
 # Misc
 *.code-workspace
+vendor/
 tmp/
-

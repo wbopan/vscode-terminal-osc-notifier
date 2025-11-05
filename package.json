@@ -16,12 +16,14 @@
     "categories": [
         "Other"
     ],
-    "main": "./out/extension.js",
+    "main": "./dist/extension.js",
     "extensionKind": [
         "ui"
     ],
     "activationEvents": [
         "onStartupFinished",
+        "onCommand:oscNotifier.enable",
+        "onCommand:oscNotifier.disable",
         "onUri"
     ],
     "keywords": [
@@ -66,9 +68,10 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p .",
-        "watch": "tsc -w -p ."
+        "vscode:prepublish": "npm run typecheck && npm run build",
+        "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outdir=dist && node scripts/copy-notifier-assets.js",
+        "typecheck": "tsc --noEmit",
+        "watch": "node scripts/copy-notifier-assets.js && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outdir=dist --watch"
     },
     "dependencies": {
         "node-notifier": "^10.0.1"
@@ -76,6 +79,7 @@
     "devDependencies": {
         "@types/node": "^20.11.19",
         "@types/vscode": "^1.93.0",
+        "esbuild": "^0.23.1",
         "typescript": "^5.6.3"
     }
 }

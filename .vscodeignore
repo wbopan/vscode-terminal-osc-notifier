@@ -1,0 +1,17 @@
+.git/
+.github/
+.vscode/
+node_modules/**
+src/**
+out/**
+scripts/**
+tsconfig.json
+tsconfig.tsbuildinfo
+coverage/**
+tmp/**
+**/*.map
+**/*.ts
+**/*.test.*
+.eslintrc.*
+.prettierrc*
+.editorconfig
