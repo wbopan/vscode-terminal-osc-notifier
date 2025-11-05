@@ -22,6 +22,28 @@ let notifier: Notifier;               // Platform-specific notifier instance
 let iconPathForOS: string | undefined; // VS Code icon path (absolute)
 let extensionCtx: vscode.ExtensionContext;
 
+const parsers = new Map<vscode.Terminal, OscParser>();
+
+type TerminalWriteEvent = { terminal: vscode.Terminal; data: string };
+
+function getParser(t: vscode.Terminal): OscParser {
+    let p = parsers.get(t);
+    if (!p) {
+        const tid = getOrAssignTerminalId(t);
+        p = new OscParser(
+            (n) => {
+                const title = n.kind === 'osc777' ? (n.title || 'Terminal') : 'Terminal';
+                const body = n.body;
+                sendOsNotification(tid, title, body);
+                sendVsCodeNotification(tid, title, body);
+            },
+            vscode.workspace.getConfiguration('oscNotifier').get<boolean>('ignoreProgressOsc9_4', true)
+        );
+        parsers.set(t, p);
+    }
+    return p;
+}
+
 // -- Terminal data parsing --
 // Detects:
 //   1) OSC 9 ; <body> BEL|ST
@@ -306,35 +328,17 @@ export function activate(ctx: vscode.ExtensionContext) {
         })
     );
 
-    // Observe raw command execution output (VS Code Shell Integration API 1.93+)
-    ctx.subscriptions.push(
-        vscode.window.onDidStartTerminalShellExecution(async (event: vscode.TerminalShellExecutionStartEvent) => {
-            if (!enabled) return;
+    const onDidWriteTerminalData = (vscode.window as any).onDidWriteTerminalData as vscode.Event<TerminalWriteEvent> | undefined;
+    if (onDidWriteTerminalData) {
+        ctx.subscriptions.push(
+            onDidWriteTerminalData((e: TerminalWriteEvent) => {
+                if (!enabled) return;
+                getOrAssignTerminalId(e.terminal);
+                getParser(e.terminal).feed(e.data);
+            })
+        );
+    }
 
-            const term = event.terminal;
-            const execution = event.execution;
-            const tid = getOrAssignTerminalId(term);
-
-            const parser = new OscParser(
-                (n: ParsedNotification) => {
-                    const title = n.kind === 'osc777' ? (n.title || 'Terminal') : 'Terminal';
-                    const body = n.body;
-                    sendOsNotification(tid, title, body);
-                    sendVsCodeNotification(tid, title, body);
-                },
-                vscode.workspace.getConfiguration('oscNotifier').get<boolean>('ignoreProgressOsc9_4', true)
-            );
-
-            const stream = execution.read();
-            try {
-                for await (const data of stream) {
-                    parser.feed(String(data));
-                }
-            } catch (e) {
-                console.warn('Terminal data stream ended with error:', e);
-            }
-        })
-    );
 }
 
 export function deactivate() {

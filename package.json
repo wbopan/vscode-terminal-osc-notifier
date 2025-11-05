@@ -20,6 +20,9 @@
     "extensionKind": [
         "ui"
     ],
+    "enabledApiProposals": [
+        "terminalDataWriteEvent"
+    ],
     "activationEvents": [
         "onStartupFinished",
         "onCommand:oscNotifier.enable",
