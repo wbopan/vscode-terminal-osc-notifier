@@ -1,6 +1,6 @@
 ![Terminal Notification banner](images/banner.png)
 
-# Terminal Notification for VS Code
+# Terminal Notification
 
 Turn terminal messages into native system notifications you can click to jump back to the right terminal.
 
@@ -20,7 +20,7 @@ Turn terminal messages into native system notifications you can click to jump ba
 
 ## Quick start
 
-1. Install **Terminal Notification for VS Code** from the VS Code Marketplace or sideload the `.vsix`.
+1. Install **Terminal Notification** from the VS Code Marketplace or sideload the `.vsix`.
 2. Run a command that emits a supported sequence from your terminal.
 3. Click the notification to focus the emitting terminal tab in VS Code.
 

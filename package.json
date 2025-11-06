@@ -1,10 +1,10 @@
 {
     "name": "vscode-terminal-osc-notifier",
-    "displayName": "Terminal Notification for VS Code",
+    "displayName": "Terminal Notification",
     "description": "Parse Ghostty-style OSC notifications (OSC 9 / OSC 777;notify;title;body) from integrated terminals and send OS/VS Code notifications. Click to focus the originating terminal tab.",
     "icon": "images/icon.png",
     "publisher": "wenbopan",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "license": "MIT",
     "repository": {
         "type": "git",
