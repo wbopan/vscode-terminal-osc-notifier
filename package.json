@@ -40,7 +40,7 @@
                 "terminalNotification.preferOsNotifications": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Send native OS notifications via node-notifier. If false, only VS Code notifications are shown."
+                    "description": "Send native OS notifications. If false, only VS Code notifications are shown."
                 },
                 "terminalNotification.showVsCodeNotification": {
                     "type": "boolean",

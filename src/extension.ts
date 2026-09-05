@@ -1,25 +1,27 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execFile } from 'child_process';
 
-// -- node-notifier: choose a backend appropriate for each platform --
+// -- OS notifier backends --
+// Windows and Linux go through node-notifier; macOS has its own Notifier
+// implementation (see createMacNotifier).
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const BaseNotifier = require('node-notifier');
 // These sub-reporters are exposed as part of the public API
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const NotificationCenter = require('node-notifier/notifiers/notificationcenter');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const WindowsToaster = require('node-notifier/notifiers/toaster');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const NotifySend = require('node-notifier/notifiers/notifysend');
 
+// node-notifier's reporter shape, which createMacNotifier also implements.
 type Notifier = {
     notify: (opts: Record<string, any>, cb?: (...args: any[]) => void) => void;
     on?: (event: string, handler: (...args: any[]) => void) => void;
 };
 
 let notifier: Notifier;               // Platform-specific notifier instance
-let iconPathForOS: string | undefined; // VS Code icon path (absolute)
+let iconPathForOS: string | undefined; // Absolute path to the notification icon
 let extensionCtx: vscode.ExtensionContext;
 
 const SETTINGS_SECTION = 'terminalNotification';
@@ -173,9 +175,17 @@ async function focusTerminalById(tid: string) {
     }
 }
 
+// Deep link handled by the registerUriHandler below. Used by the macOS and Linux
+// backends, which cannot deliver a click back into this process.
+// Note the scheme varies by build: vscode / vscode-insiders / code-oss.
+function buildFocusUri(tid: string): string {
+    const uri = `${vscode.env.uriScheme}://${extensionCtx.extension.id}/focus?tid=${encodeURIComponent(tid)}`;
+    return vscode.Uri.parse(uri).toString();
+}
+
 // -- OS notifications and VS Code notifications --
 
-// One shared click handler: node-notifier returns the options we originally passed in
+// Windows click handler: node-notifier returns the options we originally passed in
 function installGlobalNotifierClickHandler() {
     if (!notifier?.on) return;
     // Avoid duplicate registration
@@ -189,17 +199,17 @@ function installGlobalNotifierClickHandler() {
     });
 }
 
-// Resolve the built-in VS Code icon path across platforms
-// Windows: prefer common sizes (256 or 128)
-// macOS: use the .icns asset so Notification Center shows the app icon
-// Linux: use the PNG asset
-function resolveVSCodeIconPath(): string | undefined {
+// Resolve the notification icon.
+// Windows/Linux use VS Code's own icon from the installation; macOS falls back to
+// this extension's PNG because the app bundle only ships an .icns, which
+// terminal-notifier 3.x rejects for -contentImage.
+function resolveIconPath(): string | undefined {
     try {
-        const root = vscode.env.appRoot; // .../resources/app
         if (process.platform === 'darwin') {
-            const p = path.join(root, 'resources', 'darwin', 'code.icns');
+            const p = path.join(extensionCtx.extensionPath, 'images', 'icon.png');
             return fs.existsSync(p) ? p : undefined;
         }
+        const root = vscode.env.appRoot; // .../resources/app
         if (process.platform === 'win32') {
             const candidates = ['code_256x256x32.png', 'code_128x128x32.png', 'code_64x64x32.png'];
             for (const f of candidates) {
@@ -216,12 +226,40 @@ function resolveVSCodeIconPath(): string | undefined {
     }
 }
 
-// Create a more controllable notifier per platform
+// macOS backend: spawn the vendored universal terminal-notifier.app directly.
+// It hands the notification to macOS and exits immediately; the OS stores the
+// -open action and launches the URI on click, which brings VS Code forward and
+// routes through registerUriHandler -> focusTerminalById.
+// node-notifier's own NotificationCenter reporter is unusable here: it ships an
+// x86_64-only binary and drives it with the -json/-sender flags that
+// terminal-notifier 3.0.0 removed.
+function createMacNotifier(): Notifier {
+    const binary = path.join(
+        extensionCtx.extensionPath,
+        'vendor', 'mac.noindex', 'terminal-notifier.app', 'Contents', 'MacOS', 'terminal-notifier'
+    );
+    return {
+        notify(opts) {
+            const args = ['-title', opts.title, '-message', opts.message];
+            if (opts.open) args.push('-open', opts.open);
+            // Sound names come from /System/Library/Sounds; true means the system default.
+            if (opts.sound) args.push('-sound', opts.sound === true ? 'default' : opts.sound);
+            // -contentImage takes a PNG/JPEG/GIF; .icns is rejected.
+            if (opts.icon) args.push('-contentImage', opts.icon);
+
+            // A rejected -contentImage or -sound is only a warning on stderr, exit 0.
+            execFile(binary, args, (err, _stdout, stderr) => {
+                if (err) console.error('terminal-notifier failed', err);
+                else if (stderr.trim()) console.warn('terminal-notifier:', stderr.trim());
+            });
+        },
+    };
+}
+
 function createPlatformNotifier(): Notifier {
     try {
         if (process.platform === 'darwin') {
-            // macOS: use NotificationCenter so sender/activate maintain the VS Code icon and refocus VS Code
-            return new NotificationCenter({ withFallback: false });
+            return createMacNotifier();
         }
         if (process.platform === 'win32') {
             // Windows: rely on the SnoreToast toaster and set appID so VS Code's name/icon are shown
@@ -243,13 +281,12 @@ function sendOsNotification(tid: string, title: string, message: string) {
         const opts: any = {
             title: title || 'Terminal',
             message: message || '',
-            wait: true,   // Required so click events are delivered
+            wait: true,   // Required so click events are delivered (Windows)
             tid,          // Custom field retrieved later in the click callback
         };
 
-        // Optional sound. Passed through to node-notifier; platform support varies:
-        //   macOS NotificationCenter: system sound names like "Glass", "Ping", "Hero",
-        //                             or "default" for the system default.
+        // Optional sound. Support varies by backend:
+        //   macOS: system sound names like "Glass", "Ping", "Hero", or true for the default.
         //   Windows Toaster: "IM", "Mail", "Reminder", "SMS", etc.
         //   Linux notify-send: no sound support.
         const sound = getSetting<string>('sound', '');
@@ -257,27 +294,9 @@ function sendOsNotification(tid: string, title: string, message: string) {
             opts.sound = sound === 'default' ? true : sound;
         }
 
-        // Try to set the VS Code icon (each platform uses a different mechanism)
-        if (process.platform === 'darwin') {
-            // macOS: set sender/activate to VS Code so the notification header shows the VS Code icon
-            // (terminal-notifier supports -sender / -activate)
-            opts.sender = 'com.microsoft.VSCode';
-            opts.activate = 'com.microsoft.VSCode';
-            if (iconPathForOS) opts.contentImage = iconPathForOS; // Display as the notification content image (not the header badge)
-        } else if (process.platform === 'win32') {
-            // Windows: appID is already configured; also pass an icon for consistency
-            if (iconPathForOS) opts.icon = iconPathForOS;
-        } else {
-            // Linux: notify-send accepts icon paths but does not support wait/click events
-            if (iconPathForOS) opts.icon = iconPathForOS;
-
-            // Linux fallback: deep link back to the current VS Code instance when clicked
-            // Note: use vscode.env.uriScheme (vscode / vscode-insiders / code-oss)
-            const scheme = vscode.env.uriScheme;
-            const extId = extensionCtx.extension.id;
-            const uri = vscode.Uri.parse(`${scheme}://${extId}/focus?tid=${encodeURIComponent(tid)}`);
-            opts.open = uri.toString();
-        }
+        if (iconPathForOS) opts.icon = iconPathForOS;
+        // Only Windows reports clicks back to us; elsewhere the OS opens the deep link.
+        if (process.platform !== 'win32') opts.open = buildFocusUri(tid);
 
         notifier.notify(opts);
     } catch (err) {
@@ -300,7 +319,7 @@ let enabled = true;
 
 export function activate(ctx: vscode.ExtensionContext) {
     extensionCtx = ctx;
-    iconPathForOS = resolveVSCodeIconPath();
+    iconPathForOS = resolveIconPath();
     notifier = createPlatformNotifier();
     installGlobalNotifierClickHandler();
 
@@ -310,7 +329,7 @@ export function activate(ctx: vscode.ExtensionContext) {
         vscode.commands.registerCommand('terminalNotification.disable', () => { enabled = false; vscode.window.showInformationMessage('Terminal notifications disabled'); }),
     );
 
-    // URI handler: fallback for Linux or other runtimes without click events
+    // URI handler: click target of the macOS/Linux OS notifications.
     ctx.subscriptions.push(
         vscode.window.registerUriHandler({
             handleUri: (uri) => {
